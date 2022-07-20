@@ -1,26 +1,32 @@
+import matplotlib
+import datetime
+import warnings
+import copy
+import re
+
 import streamlit as st
 import backtrader as bt
 import yfinance as yf
 import pandas as pd
 import pandas_datareader as pdr
-import matplotlib.pyplot as plt
 import plotly.graph_objs as go
 import hydralit_components as hc
-import matplotlib
 import plotly.express as px
 import plotly.graph_objects as go
 import numpy as np
-import datetime
-import warnings
 from pandas_datareader import data as pdr
+
+import matplotlib.pyplot as plt
+from matplotlib import warnings
+from matplotlib.dates import (HOURS_PER_DAY, MIN_PER_HOUR, SEC_PER_MIN)
+
 from pypfopt.discrete_allocation import DiscreteAllocation, get_latest_prices
 from pypfopt import EfficientFrontier
 from pypfopt import risk_models
 from pypfopt import expected_returns
 from pypfopt import plotting
 from pypfopt import objective_functions
-from matplotlib import warnings
-from matplotlib.dates import (HOURS_PER_DAY, MIN_PER_HOUR, SEC_PER_MIN)
+
 from urllib.request import urlopen, Request
 from bs4 import BeautifulSoup as bs
 from rsi import RSIStrategy
@@ -28,22 +34,29 @@ from datetime import date
 from datetime import datetime
 from yahooquery import Screener
 #import cufflinks as cf
-import copy
 from io import BytesIO
+
 st.set_page_config(page_title='Tradelyne', layout="wide",initial_sidebar_state='collapsed')#initial_sidebar_state='collapsed', 
+
 hide_menu_style = """
         <style>
         #MainMenu {visibility: hidden;}
         </style>
         """
+
 st.markdown(hide_menu_style, unsafe_allow_html=True)
+
 def fxn():
     warnings.warn("deprecated", DeprecationWarning)
+
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     fxn()
+
 st.set_option('deprecation.showPyplotGlobalUse', False)
+
 today=date.today()
+
 def backtestrsi():
     '''global strategy
     ticker=st.sidebar.text_input("Stock ticker", value="AAPL")
@@ -89,8 +102,10 @@ def backtestrsi():
     st.subheader(f"{ticker}'s total returns are {returns}% with a {annual_return}% APY")
     strategy=''
     '''
+
     global strategy
     s1,s2,s3,s4=st.columns(4)
+
     with s1:
         ticker=st.text_input("Stock ticker", value="AAPL")
     with s2:
@@ -99,6 +114,7 @@ def backtestrsi():
         end=st.text_input("End date", value=today)
     with s4:
         cash=st.text_input("Starting cash", value=10000)
+
     cash=int(cash)
     cerebro=bt.Cerebro()
     cerebro.broker.set_cash(cash)
@@ -106,14 +122,17 @@ def backtestrsi():
     data = bt.feeds.PandasData(dataname=yf.download(ticker, start, end))
     start=start.split("-")
     end=end.split("-")
+
     for i in range(len(start)):
         start[i]=int(start[i])
     for j in range(len(end)):
         end[j]=int(end[j])
+
     year=end[0]-start[0]
     month=end[1]-start[1]
     day=end[2]-start[2]
     totalyear=year+(month/12)+(day/365)
+
     matplotlib.use('Agg')
     cerebro.adddata(data)
 
@@ -144,7 +163,8 @@ def backtestrsi():
     annual_return=str(round(annual_return,2))
     figure = cerebro.plot(style='line')[0][0]
     graph, info=st.columns([2,1])
-    print(stratdd[0].analyzers.dd.get_analysis())
+
+    # print(stratdd[0].analyzers.dd.get_analysis())
     with graph:
         st.pyplot(figure)
     with info:
@@ -155,8 +175,10 @@ def backtestrsi():
                 #for i in x:
                 #    tra=tra+(i.upper(), ':', x[i])
                 #    st.write(tra)
+        print("Trade info \n\n\n")
         print(trade)
         #st.write(trade)
+
         if int(start_value)<=int(final_value):
             fig = go.Figure(go.Indicator(
             mode = "gauge+number+delta",
@@ -185,9 +207,11 @@ def backtestrsi():
                     {'range': [0, start_value], 'color': 'white'},
                     {'range': [final_value, start_value], 'color': '#D3D3D3'}],}
             ))
+
             fig.update_layout(paper_bgcolor = "white", font = {'color': "black", 'family': "Arial"}, width=500, height=500)
             st.image(fig)
             st.plotly_chart(fig)
+
         #st.subheader('Total returns: ', f"{returns}")
         #st.subheader('Annual returns: ', f"{annual_return}")
         st.subheader(f"{ticker}'s total returns are {returns}% with a {annual_return}% APY")
@@ -195,41 +219,89 @@ def backtestrsi():
         st.subheader(f'Final investment value: {final_value}')
         sr=stratdd[0].analyzers.sr.get_analysis()
         print(sr)
+
         for i in sr:
             ratio=sr[i]
+
         ratio=str(round(ratio, 3))
         print(ratio)
         st.subheader(f'Sharpe Ratio: {ratio}')
+
         dd=stratdd[0].analyzers.dd.get_analysis()
         max=dd['max']
         print(max)
-        #max=max[1]
+        #max=max[1]+
+
         drawdown='Drawdown Stats: \n'
+
         for i in max:
             max[i]=str(round(max[i], 3))
-            drawdown=f"{drawdown} {i} : {max[i]}  |    "
+            drawdown=f"{drawdown} {i} : {max[i]} \n"
+
         print(drawdown)
         st.subheader(drawdown)
+
         st.subheader('Trade Details')
+
+        # trade_total = f"Total: {trade['AutoOrderedDict']['total']['AutoOrderedDict']['total']}"
+        # trade_open = f"Open: {trade['AutoOrderedDict']['total']['AutoOrderedDict']['open']}"
+        # trade_closed = f"Closed: {trade['AutoOrderedDict']['total']['AutoOrderedDict']['closed']}"
+        # streak_won_current = f"Current: {['AutoOrderedDict']['streak']['AutoOrderedDict']['won']['AutoOrderedDict']['current']}"
+        # streak_won_longest = f"Longest: {['AutoOrderedDict']['streak']['AutoOrderedDict']['won']['AutoOrderedDict']['longest']}"
+        # streak_lost_current = f"Current: {['AutoOrderedDict']['streak']['AutoOrderedDict']['lost']['AutoOrderedDict']['current']}"
+        # streak_lost_longest = f"Longest: {['AutoOrderedDict']['streak']['AutoOrderedDict']['lost']['AutoOrderedDict']['longest']}"
+        # trade_details = "" f"{trade_total}\n{trade_open}\n{trade_closed}\n{streak_won_current}\n{streak_won_longest}\n{streak_lost_current}\n{streak_lost_longest}"
+
+        # st.write(trade_details)
         for i in trade:
-            if i=='total' or i=='pnl' or i=='streak' or i=='lost' or i=='won':
+            if i=='total' or i=='streak' or i=='lost' or i=='won':
                 if i=='pnl':
                     pass
                     for j in i:
                         pass
+
                 x=str(trade[i])
-                for k in "[]()''":
-                    x=x.replace(k, '')
-                x=x.replace('AutoOrderedDict', '')
-                st.write(i,x)
+
+                for k in str(trade[i]):
+                    if k in "[(''":
+                        x=x.replace(k, '')
+                    if k in ")]":
+                        x=x.replace(k, ' \n')
+                    if k == ",":
+                        x=x.replace(k, '')
+                
+                x, sep, end = x.partition('average')
+
+                x=x.replace('AutoOrderedDict', '\n')
+
+                def findWord(w):
+                    return re.compile(r'\b({0})\b'.format(w), flags=re.IGNORECASE).search
+                
+                print(findWord("won")(x))
+
+                x=x.replace('open', '\nOpen')
+                x=x.replace('total', 'Total')
+                x=x.replace('closed', '\nClosed')
+                x=x.replace('longest', '\nLongest')
+                x=x.replace('current', 'Current')
+                x=x.replace('won', 'Won:\n')
+                x=x.replace('lost', 'Lost:\n')
+                x=x.replace('pnl', '\n\nPNL')
+
+                title_trade = f"{str(i).upper()}\n"
+                st.write(title_trade ,x)
+
     st.write('')
     st.subheader(f"{ticker}'s total returns are {returns}% with a {annual_return}% APY")
     #final_value=round(returns, 2)
+
     st.write(f'Initial investment: {cash}')
     st.write(f'Final money: {final_value}')
     st.write(stratdd[0].analyzers.sr.get_analysis())
+
     #st.write(stats)
     strategy=''
+
 def volatility():
     global strategy
     import backtrader as bt
@@ -238,6 +310,7 @@ def volatility():
     import yfinance as yf
     import pandas as pd
     global ticker
+
     ticker=st.sidebar.text_input("Stock ticker", value="AAPL")
     start=st.sidebar.text_input("Start date", value="2018-01-31")
     end=st.sidebar.text_input("End date", value=today)
@@ -246,6 +319,7 @@ def volatility():
     cerebro = bt.Cerebro()
     cerebro.broker.setcash(cash)
     start_value=cash
+
     class SPYVIXData(bt.feeds.GenericCSVData):
         lines = ('vixopen', 'vixhigh', 'vixlow', 'vixclose',)
 
@@ -286,18 +360,22 @@ def volatility():
     df2=df2.reset_index()
     df3=df2
     df2=df2.drop("Date", axis=1)
+
     result=pd.concat([df, df2], axis=1, join='inner')
     results=result
     df3.to_csv(r'https://github.com/Utkarshhh20/trial/blob/main/trial.csv')
     results.to_csv(r'https://github.com/Utkarshhh20/trial/blob/main/trial2.csv')
     first_column1 = results.columns[0]
     results.to_csv('trial2.csv', index=False)
+
     #results = pd.read_csv('trial2.csv')
     # If you know the name of the column skip this
     # Delete first
     #result = result.drop([first_column], axis=1)
     # If you know the name of the column skip this
+
     first_column2 = df3.columns[0]
+
     # Delete first
     df3.to_csv('trial.csv', index=False)
     st.dataframe(result)
@@ -309,14 +387,17 @@ def volatility():
     vixDataFeed = VIXData(dataname=vix_csv_file)
     start=start.split("-")
     end=end.split("-")
+
     for i in range(len(start)):
         start[i]=int(start[i])
     for j in range(len(end)):
         end[j]=int(end[j])
+
     year=end[0]-start[0]
     month=end[1]-start[1]
     day=end[2]-start[2]
     totalyear=year+(month/12)+(day/365)
+
     matplotlib.use('Agg')
     cerebro.adddata(spyVixDataFeed)
     cerebro.adddata(vixDataFeed)
@@ -342,6 +423,7 @@ def volatility():
 def backtestgolden():
     global strategy
     from goldencrossover import goldencrossover
+
     ticker=st.sidebar.text_input("Stock ticker", value="AAPL")
     start=st.sidebar.text_input("Start date", value="2018-01-31")
     end=st.sidebar.text_input("End date", value=today)
@@ -353,10 +435,12 @@ def backtestgolden():
     data = bt.feeds.PandasData(dataname=yf.download(ticker, start, end))
     start=start.split("-")
     end=end.split("-")
+
     for i in range(len(start)):
         start[i]=int(start[i])
     for j in range(len(end)):
         end[j]=int(end[j])
+
     year=end[0]-start[0]
     month=end[1]-start[1]
     day=end[2]-start[2]
@@ -380,38 +464,46 @@ def backtestgolden():
     returns=str(returns)
     annual_return=str(annual_return)
     figure = cerebro.plot()[0][0]
+
     st.pyplot(figure)
     st.subheader(f"{ticker}'s total returns are {returns}% with a {annual_return}% APY")
     strategy=''
+
 def backtestbollinger():
     global strategy
     import numpy as np
     import pandas as pd
     import pandas_datareader as pdr
     import matplotlib.pyplot as plt
+
     symbol=st.sidebar.text_input("Stock ticker", value="AAPL")
     start=st.sidebar.text_input("Start date", value="2018-01-31")
     end=st.sidebar.text_input("End date", value=today)
     cash=st.sidebar.text_input("Starting cash", value=10000)
     cash=int(cash)
+
     def get_bollinger_bands(prices, rate=20):
         sma=prices.rolling(rate).mean()
         std = prices.rolling(rate).std()
         bollinger_up = sma + std * 2 # Calculate top band
         bollinger_down = sma - std * 2 # Calculate bottom band
         return bollinger_up, bollinger_down, sma
+
     df = pdr.DataReader(symbol, 'yahoo', start=start, end=end)
     start=start.split("-")
     end=end.split("-")
+
     for i in range(3):
         start[i]=int(start[i])
         end[i]=int(end[i])
+
     totalyear=(end[0]-start[0])+((end[1]-start[1])/12)+((end[2]-start[2])/365)
     df.index = np.arange(df.shape[0])
     closing_prices = df['Close']
     money=cash
     investpercent=0.9
     bollinger_up, bollinger_down, sma = get_bollinger_bands(closing_prices)
+
     matplotlib.use('Agg')
     fig=plt.title(symbol + ' Bollinger Bands')
     fig=plt.xlabel('Days')
@@ -420,12 +512,14 @@ def backtestbollinger():
     fig=plt.plot(closing_prices, label='Closing Prices')
     fig=plt.plot(bollinger_up, label='Bollinger Up', c='g', linewidth=1)
     fig=plt.plot(bollinger_down, label='Bollinger Down', c='r', linewidth=1)
+
     sell=[]
     sellday=[]
     buy=[]
     buyday=[]
     close=df['Close']
     position=1
+
     for i in range(len(close)):
         if position==-1 and i==(len(close)-1):
             print('selling', df['Close'][i], bollinger_up[i])
@@ -442,8 +536,10 @@ def backtestbollinger():
             sell.append(df['Close'][i])
             sellday.append(i)
             position=1
+
     print(sell, buy)
     trades=len(buy)
+
     for i in range(trades):
         if cash==money:
             profit=((sell[i]-buy[i])/buy[i])*investpercent*cash
@@ -451,21 +547,25 @@ def backtestbollinger():
         else:
             profit=((sell[i]-buy[i])/buy[i])*investpercent*cash
             cash=cash+profit
+
     returns=(cash-money)*100/money
     annual_return=returns/totalyear
     returns=round(returns, 2)
     annual_return=round(annual_return,2)
     returns=str(returns)
     annual_return=str(annual_return)
+
     for i in range(len(sellday)):
         fig=plt.plot(sellday[i], sell[i], marker="v", markersize=7, markeredgecolor="red", markerfacecolor="red")
         fig=plt.plot(buyday[i], buy[i], marker="^", markersize=7, markeredgecolor="green", markerfacecolor="green")
+    
     fig=plt.savefig(fname='hi')
     plt.legend()
     plt.show()
     st.pyplot(fig)
     st.subheader(f"{symbol}'s total returns are {returns}% with a {annual_return}% APY")
     strategy=''
+
 def get_fundamentals():
     try:
         # Find fundamentals table
